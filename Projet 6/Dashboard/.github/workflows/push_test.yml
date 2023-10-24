@@ -1,0 +1,46 @@
+name: Build, Test, and Merge
+
+on:
+  push:
+    branches:
+      - updates
+  workflow_dispatch:
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python version
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.11'
+
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        
+      - name: Test with pytest
+        run: |
+          pip install pytest
+          python -m pytest tests
+
+  merge-branch:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Merge updates -> main
+        uses: devmasx/merge-branch@master
+        with:
+          type: now
+          target_branch: main
+          message: Merge updates into main
+          github_token: ${{ secrets.MERGE_TOKEN }}
